@@ -19,8 +19,8 @@ request.onerror = function(event) {
     console.log(event.target.errorCode);
 }
 
-function saveTransaction(transaction) {
-    const record = db.record(['new_transaction'], 'readwrite');
+function saveRecord(transaction) {
+    const record = db.transaction(['new_transaction'], 'readwrite');
 
     const transactionObjectStore = record.objectStore('new_transaction');
 
@@ -28,7 +28,8 @@ function saveTransaction(transaction) {
 }
 
 function uploadTransaction() {
-    const record = db.record(['new_transaction'], 'readwrite');
+    console.log('you are here')
+    const record = db.transaction(['new_transaction'], 'readwrite');
 
     const transactionObjectStore = record.objectStore('new_transaction');
 
@@ -36,7 +37,7 @@ function uploadTransaction() {
 
     getAll.onsuccess = function() {
         if(getAll.result.length > 0) {
-            fetch('/api/transaction', {
+            fetch('/api/transaction/bulk', {
                 method: 'POST',
                 body: JSON.stringify(getAll.result),
                 headers: {
@@ -49,7 +50,7 @@ function uploadTransaction() {
                 if(serverResponse.message) {
                     throw new Error(serverResponse);
                 }
-                const record = db.record(['new_transaction'], 'readwrite');
+                const record = db.transaction(['new_transaction'], 'readwrite');
 
                 const transactionObjectStore = record.objectStore('new_transaction');
 

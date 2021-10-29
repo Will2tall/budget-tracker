@@ -1,19 +1,12 @@
 const FILES_TO_CACHE = [
     "/",
-    "./index.html",
-    "./css/styles.css",
-    "./icons/icon-72x72.png",
-    "./icons/icon-96x96.png",
-    "./icons/icon-128x128.png",
-    "./icons/icon-144x144.png",
-    "./icons/icon-152x152.png",
-    "./icons/icon-192x192.png",
-    "./icons/icon-384x384.png",
-    "./icons/icon-512x512.png",
-    "./js/idb.js",
-    "./js/index.js",
-    "../routes/api.js",
-    "../models/transaction.js"
+    "/js/idb.js",
+    "/js/index.js",
+    "/manifest.json",
+    "/css/styles.css",
+    "/icons/icon-192x192.png",
+    "/icons/icon-384x384.png",
+    "/icons/icon-512x512.png",
 ]
 
 const APP_PREFIX = 'BudgetTracker-';
@@ -28,29 +21,36 @@ self.addEventListener('install', function(i) {
     )
 })
 
-self.addEventListener('activate', function (a) {
-    a.waitUntil(
-        caches.keys().then(keyList => {
-            let cacheKeeplist = keyList.filter(key => {
-                return key.indexOf(APP_PREFIX)
+self.addEventListener("fetch", function(event) {
+    if (event.request.url.includes("/api/")) {
+      event.respondWith(
+        caches.open(CACHE_NAME).then(cache => {
+          return fetch(event.request)
+            .then(response => {
+              if (response.status === 200) {
+                cache.put(event.request.url, response.clone());
+              }
+  
+              return response;
+            })
+            .catch(err => {
+              return cache.match(event.request);
             });
-            cacheKeeplist.push(CACHE_NAME);
-
-            return Promise.all(
-                keyList.map((key, i) => {
-                    if(cacheKeeplist.indexOf(key) === -1) {
-                        return caches.delete(keyList[i]);
-                    }
-                })
-            )
-        })
-    )
-})
-
-self.addEventListener('fetch', function (f) {
-    f.respondWith(
-        caches.match(f.request).then(request => {
-            return request || fetch(f.request)
-        })
-    )
-})
+        }).catch(err => console.log(err))
+      );
+  
+      return;
+    }
+  
+    event.respondWith(
+      fetch(event.request).catch(function() {
+        return caches.match(event.request).then(function(response) {
+          if (response) {
+            return response;
+          } else if (event.request.headers.get("accept").includes("text/html")) {
+            return caches.match("/");
+          }
+        });
+      })
+    );
+  });
